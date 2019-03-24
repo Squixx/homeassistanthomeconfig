@@ -1,0 +1,197 @@
+homeassistant:
+  # Name of the location where Home Assistant is running
+  name: !secret HA_name
+  # Location required to calculate the time the sun rises and sets
+  latitude: !secret home_latitude
+  longitude: !secret home_longtitude
+  # Impacts weather/sunrise data (altitude above sea level in meters)
+  elevation: 0
+  # metric for Metric, imperial for Imperial
+  unit_system: metric
+  # Pick yours from here: http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  time_zone: Europe/Amsterdam
+  # Customization file
+  customize: !include customize.yaml
+  # Include Packages
+  packages: !include_dir_named packages
+logger:
+  default: critical
+  # logs:
+  # add log for spotify when adding new streaming devices
+  # homeassistant.components.media_player.spotify: info
+lovelace:
+  mode: yaml
+# Enables configuration UI
+config:
+## for calendar
+google:
+  client_id: !secret google_client_id
+  client_secret: !secret google_client_secret
+
+http:
+  base_url: !secret base_url #:8123
+  trusted_networks:
+    - 172.30.33.5 # NGINX
+system_health:
+
+# Checks for available updates
+# Note: This component will send some information about your system to
+# the developers to assist with development of Home Assistant.
+# For more information, please see:
+# https://home-assistant.io/blog/2016/10/25/explaining-the-updater/
+updater:
+  # Optional, allows Home Assistant developers to focus on popular components.
+  include_used_components: true
+
+# Discover some devices automatically
+discovery:
+
+# Allows you to issue voice commands from the frontend in enabled browsers
+conversation:
+
+# View all events in a logbook
+logbook:
+
+#Enables a map showing the location of tracked devices
+#map:
+custom_updater: # https://github.com/custom-components/custom_updater/wiki/Installation
+  track:
+    - components
+    - cards
+    - python_scripts
+  card_urls:
+    - https://raw.githubusercontent.com/matisaul/vertical-style-card/master/tracker.json
+    - https://raw.githubusercontent.com/kalkih/mini-media-player/master/tracker.json
+    - https://raw.githubusercontent.com/kalkih/mini-graph-card/master/tracker.json
+    - https://raw.githubusercontent.com/ljmerza/calendar-card/master/custom_updater.json
+sun:
+shopping_list:
+# Sensors
+sensor:
+  - platform: yr
+
+  # - platform: postnl
+  #   username: !secret postnl_username
+  #   password: !secret postnl_password
+  #   name: "Pakketjes"
+
+  - platform: Sonarr_Upcoming_Media
+    api_key: !secret sonarr_api_key
+    host: !secret docker_ip
+    port: !secret sonarr_port
+    days: 7
+    ssl: false
+    max: 10
+
+  - platform: Radarr_Upcoming_Media
+    api_key: !secret radarr_api_key
+    host: !secret docker_ip
+    port: !secret radarr_port
+    days: 120
+    ssl: false
+    theaters: false
+    max: 10
+
+  - platform: darksky
+    api_key: !secret darksky_api_key
+    language: nl
+    latitude: !secret home_latitude
+    longitude: !secret home_longtitude
+    monitored_conditions:
+      - summary
+      - icon
+      - nearest_storm_distance
+      - moon_phase
+      - apparent_temperature
+      - cloud_cover
+      - precip_probability
+      - precip_type
+
+  - platform: time_date
+    display_options:
+      - "time"
+      - "date"
+
+  - platform: template
+    sensors:
+      dag:
+        value_template: "{{ ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'][now().weekday()] }}"
+        entity_id: sensor.time
+      # datum:
+      #   value_template: "{{[now().day()] - [now().month()]}}"
+      #   entity_id: sensor.time
+
+  - platform: lastfm
+    api_key: !secret lastfm_api_key
+    users:
+      - !secret lastfm_user
+
+  - platform: template
+    sensors:
+      period_of_day:
+        friendly_name: "Lichtmoment"
+        value_template: >-
+          {% if (as_timestamp(states.sun.sun.attributes.next_dusk)) - (as_timestamp(states.sun.sun.attributes.next_setting)) < 0 %}
+            Schemer
+          {% elif (as_timestamp(states.sun.sun.attributes.next_rising)) - (as_timestamp(states.sun.sun.attributes.next_dawn)) < 0 %}
+            Morgenlicht
+          {% elif (states.sun.sun.attributes.elevation) < -4 %}
+            Nacht
+          {% else %}
+            Dag
+          {% endif %}
+        icon_template: >-
+          {% if (as_timestamp(states.sun.sun.attributes.next_dusk)) - (as_timestamp(states.sun.sun.attributes.next_setting)) < 0 %}
+            mdi:weather-sunset-down
+          {% elif (as_timestamp(states.sun.sun.attributes.next_rising)) - (as_timestamp(states.sun.sun.attributes.next_dawn)) < 0 %}
+            mdi:weather-sunset-up
+          {% elif (states.sun.sun.attributes.elevation) < -4 %}
+            mdi:weather-night
+          {% else %}
+            mdi:weather-sunny
+          {% endif %}
+
+  - platform: nzbget
+    host: !secret docker_ip
+    username: !secret nzbget_user
+    password: !secret nzbget_password
+    monitored_variables:
+      - article_cache
+      - download_rate
+      - remaining_size
+
+weather:
+  - platform: buienradar
+    latitude: !secret home_latitude
+    longitude: !secret home_longtitude
+    forecast: True
+
+notify:
+  - platform: kodi
+    name: woonkamer_kodi
+    host: !secret kodi_ip
+
+# Text to speech
+tts:
+  - platform: google
+    cache: true
+    language: 'nl'
+    cache_dir: /tmp/tts
+    time_memory: 300
+# Cloud
+cloud:
+
+# stuff for LMS
+# dialogflow:
+# intent_script: 
+
+mqtt:
+  broker: !secret mqtt_ip # This will have to be your mqtt broker
+  discovery: true
+  discovery_prefix: homeassistant
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml

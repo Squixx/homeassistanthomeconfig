@@ -1,0 +1,199 @@
+binary_sensor:
+    #shelly slaapkamer switchtopic:
+    - platform: mqtt
+      name: slaapkamer_switch
+      state_topic: 'cmnd/shelly_slaapkamer_switch/POWER1'
+      payload_on: 'ON'
+      payload_off: 'OFF'
+      qos: 1
+## switchtopic shelly_slaapkamer_switch
+## switchmode 1
+light:
+    #tasmota switches
+    - platform: switch
+      name: Hoek
+      entity_id: switch.hoeklamp
+    - platform: switch
+      name: Tak
+      entity_id: switch.lamptak
+    - platform: switch
+      name: Plant
+      entity_id: switch.plantlamp
+    - platform: switch
+      name: Kaptafel
+      entity_id: switch.verlengsnoerswitch
+
+    #tasmota shelly
+    - platform: mqtt
+      name: Kantoor
+      state_topic: 'stat/shelly_kantoor/POWER'
+      command_topic: 'cmnd/shelly_kantoor/POWER'
+      optimistic: false
+      payload_on: 'ON'
+      payload_off: 'OFF'
+      qos: 1
+      retain: true
+
+    - platform: mqtt
+      name: Keuken
+      state_topic: 'stat/shelly_keuken/POWER'
+      command_topic: 'cmnd/shelly_keuken/POWER'
+      optimistic: false
+      payload_on: 'ON'
+      payload_off: 'OFF'
+      qos: 1
+      retain: true
+
+    - platform: mqtt
+      name: Slaapkamer_plafond
+      state_topic: 'stat/shelly_slaapkamer/POWER'
+      command_topic: 'cmnd/shelly_slaapkamer/POWER'
+      optimistic: false
+      payload_on: 'ON'
+      payload_off: 'OFF'
+      qos: 1
+      retain: true
+
+    - platform: mqtt
+      name: Eettafel
+      state_topic: 'stat/shelly_wk1/POWER'
+      command_topic: 'cmnd/shelly_wk1/POWER'
+      optimistic: false
+      payload_on: 'ON'
+      payload_off: 'OFF'
+      qos: 1
+      retain: true
+    - platform: mqtt
+      name: Kast
+      state_topic: 'stat/shelly_wk2/POWER'
+      command_topic: 'cmnd/shelly_wk2/POWER'
+      optimistic: false
+      payload_on: 'ON'
+      payload_off: 'OFF'
+      qos: 1
+      retain: true
+    - platform: mqtt
+      name: WC
+      state_topic: 'stat/shelly_wc/POWER'
+      command_topic: 'cmnd/shelly_wc/POWER'
+      optimistic: false
+      payload_on: 'ON'
+      payload_off: 'OFF'
+      qos: 1
+      retain: true
+    - platform: mqtt
+      name: Badkamer
+      state_topic: 'stat/shelly_badkamer/POWER'
+      command_topic: 'cmnd/shelly_badkamer/POWER'
+      optimistic: false
+      payload_on: 'ON'
+      payload_off: 'OFF'
+      qos: 1
+      retain: true
+
+    - platform: group
+      name: controlled_lights
+      entities:
+          - light.wc
+          - light.keuken
+          - light.kantoor
+          - light.badkamer
+          - light.hoek
+          - light.tak
+          - light.plant
+          - light.rieten_lamp
+          - light.eettafel
+          - light.rieten_stalamp
+          - light.glazen_lamp
+          - light.hal_light
+          - light.gang_light
+
+    - platform: group
+      name: slaapkamer
+      entities:
+          - light.rieten_stalamp
+          - light.glazen_lamp
+
+    - platform: group
+      name: zithoek
+      entities:
+          - light.hoek
+          - light.tak
+          - light.plant
+          - light.rieten_lamp
+
+automation:
+    - id: slaapkamer_switch
+      alias: slaapkamer schakelaar
+      trigger:
+          - platform: state
+            entity_id: binary_sensor.slaapkamer_switch
+      action:
+          service: light.toggle
+          entity_id:
+              - light.slaapkamer
+
+    - id: slaapkamer_button
+      alias: slaapkamer button
+      trigger:
+          platform: mqtt
+          topic: 'zigbee2mqtt/slaapkamer'
+      condition:
+          condition: template
+          value_template: '{{ "single" == trigger.payload_json.click }}'
+      action:
+          service: light.toggle
+          entity_id:
+              - light.slaapkamer
+
+    - id: slaapkamer_stalamp
+      alias: slaapkamer stalamp schakelaar
+      trigger:
+          platform: mqtt
+          topic: 'zigbee2mqtt/slaapkamer'
+      condition:
+          condition: template
+          value_template: '{{ "triple" == trigger.payload_json.click }}'
+      action:
+          service: light.toggle
+          entity_id:
+              - light.Rieten_stalamp
+
+    - id: slaapkamer_glazenlamp
+      alias: slaapkamer glazen lamp schakelaar
+      trigger:
+          platform: mqtt
+          topic: 'zigbee2mqtt/slaapkamer'
+      condition:
+          condition: template
+          value_template: '{{ "quadrupel" == trigger.payload_json.click }}'
+      action:
+          service: light.toggle
+          entity_id:
+              - light.glazen_lamp
+
+    # esptool.py --port COM3 write_flash -fs 1MB -fm dout 0x0 sonoff-basic630.bin
+
+    - id: gang_full_power
+      alias: 'gang Ging Hard aan'
+      trigger:
+          - platform: numeric_state
+            entity_id: light.gang_light
+            value_template: '{{ state.attributes.brightness |default(0)}}'
+            above: 253
+      action:
+          - service: light.turn_on
+            data:
+                entity_id: light.gang_light
+                brightness: 60
+
+script:
+    kaptafel_uit:
+        alias: 'Kaptafel Uit'
+        sequence:
+            - service: homeassistant.turn_off
+              entity_id: light.kaptafel
+            - delay:
+                  seconds: '10'
+            - service: homeassistant.turn_on
+              entity_id: light.kaptafel

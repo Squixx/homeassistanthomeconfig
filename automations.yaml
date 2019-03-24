@@ -1,0 +1,116 @@
+# woonkamer lichten
+- id: Evening_lights
+  alias: 'Lichten aan als het donker is'
+  trigger:
+  - platform: template
+    value_template: "{{ states.sensor.period_of_day.state == 'Schemer' }}"
+  - platform: state
+    entity_id: group.all_devices
+    to: 'home'
+  condition:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: group.all_devices
+      state: 'home'
+    - condition: state
+      entity_id: input_boolean.guest_mode
+      state: 'on'
+  - condition: template
+    value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+  - condition: state
+    entity_id: input_boolean.sleep_mode
+    state: 'off'
+  action:
+    - service: scene.turn_on
+      entity_id: scene.avond
+
+
+# Rainy day
+- id: bewolkte_dag
+  alias: 'rainy day'
+  trigger:
+  - platform: template
+    value_template: '{{states.sensor.dark_sky_cloud_coverage.state | int > 70}}'
+  - platform: state
+    entity_id: group.all_devices
+    to: 'home'
+  condition:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: group.all_devices
+      state: 'home'
+    - condition: state
+      entity_id: input_boolean.guest_mode
+      state: 'on'
+  - condition: template
+    value_template: '{{states.sensor.dark_sky_cloud_coverage.state | int > 70}}'
+  - condition: template
+    value_template: "{{ states.sensor.period_of_day.state == 'Dag' }}"
+  - condition: state
+    entity_id: input_boolean.sleep_mode
+    state: 'off'
+  action:
+    - service: scene.turn_on
+      entity_id: scene.bewolkt
+
+- id: Wolken breken open
+  alias: 'Wolken breken open'
+  trigger:
+  - platform: template
+    value_template: '{{states.sensor.dark_sky_cloud_coverage.state | int < 60}}'
+  condition:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: group.all_devices
+      state: 'home'
+    - condition: state
+      entity_id: input_boolean.guest_mode
+      state: 'on'
+  - condition: template
+    value_template: '{{states.sensor.dark_sky_cloud_coverage.state | int < 60}}'
+  - condition: template
+    value_template: "{{ states.sensor.period_of_day.state == 'Dag' }}"
+  action:
+    - service: scene.turn_on
+      entity_id: scene.zonnig
+
+# Turn off lights when everybody leaves the house
+- id: Away
+  alias: 'away mode'
+  trigger:
+  - platform: state
+    entity_id: group.all_devices
+    to: 'not_home'
+  - platform: time
+    at: '02:32:00'
+  condition:
+  - condition: state
+    entity_id: group.all_devices
+    state: 'not_home'
+  action:
+  - service: homeassistant.turn_off
+    entity_id: light.controlled_lights
+  - service: homeassistant.turn_off
+    entity_id: light.kaptafel
+
+- id: home
+  alias: 'home mode'
+  trigger:
+  - platform: state
+    entity_id: group.all_devices
+    to: 'home'
+  condition:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: group.all_devices
+      state: 'home'
+    - condition: state
+      entity_id: input_boolean.guest_mode
+      state: 'on'
+  action:
+  - service: homeassistant.turn_on
+    entity_id: light.kaptafel

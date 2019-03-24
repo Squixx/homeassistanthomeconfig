@@ -1,0 +1,50 @@
+switch:
+  - platform: wake_on_lan
+    name: windowswol
+    mac_address: "bc:5f:f4:47:ba:57"
+    host: 192.168.1.19
+  - platform: command_line
+    switches:
+      pc:
+        command_off: 'curl http://192.168.1.19:5001/turnoff/shutdown'
+  - platform: template
+    switches:
+      desktop:
+        value_template: '{{ states.switch.windowswol.state }}'
+        turn_on:
+          service: switch.turn_on
+          entity_id: switch.windowswol
+        turn_off:
+          service: switch.turn_off
+          entity_id: switch.pc
+
+automation:
+- id: pc_weekdays
+  alias: Pc doordeweeks
+  trigger:
+  - platform: state
+    entity_id: binary_sensor.kantoor_occupancy
+    from: 'off'
+    to: 'on'
+  - platform: time
+    at: '09:30:00'
+  condition:
+  - condition: state
+    entity_id: binary_sensor.kantoor_occupancy
+    state: 'on'
+  - condition: time
+    after: '09:00:00'
+    before: '10:00:00'
+    weekday:
+      - mon
+      - tue
+      - wed
+      - thu
+      - fri
+  - condition: state
+    entity_id: device_tracker.martijn
+    state: 'home'
+  action:
+    service: switch.turn_on
+    entity_id: switch.desktop
+

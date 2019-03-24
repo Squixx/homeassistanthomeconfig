@@ -1,0 +1,35 @@
+telegram_bot:
+    - platform: webhooks
+      api_key: !secret telegram_api_key
+      parse_mode: html
+      allowed_chat_ids:
+          - !secret telegram_chat_id_m
+          - !secret telegram_chat_id_l
+      trusted_networks:
+          - 172.30.33.5 # NGINX
+notify:
+    - name: telegram_martijn
+      platform: telegram
+      chat_id: !secret telegram_chat_id_m
+    - name: telegram_lisa
+      platform: telegram
+      chat_id: !secret telegram_chat_id_l
+    - name: telegram_martijn_en_lisa
+      platform: group
+      services:
+          - service: telegram_martijn
+          - service: telegram_lisa
+
+automation:
+    - alias: 'Telegram bot that simply acknowledges'
+      hide_entity: true
+      trigger:
+          platform: event
+          event_type: telegram_callback
+          event_data:
+              data: '/do_nothing'
+      action:
+          - service: telegram_bot.answer_callback_query
+            data_template:
+                callback_query_id: '{{ trigger.event.data.id }}'
+                message: 'OK!'

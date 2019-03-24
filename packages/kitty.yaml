@@ -1,0 +1,62 @@
+automation:
+- id: kattenbak
+  alias: kattenbak
+  trigger:
+  - platform: state
+    entity_id: sensor.kitty_litter
+    from: 'schoon'
+    to: 'vies'
+  - platform: state
+    entity_id: group.all_devices
+    to: 'home'
+  - platform: time_pattern
+    minutes: 17
+  condition:
+  - condition: state
+    entity_id: sensor.kitty_litter
+    state: 'vies'
+  - condition: state
+    entity_id: group.all_devices
+    state: 'home'
+  - condition: state
+    entity_id: input_boolean.sleep_mode
+    state: 'off'
+  action:
+    - service_template: >
+        {% if (is_state('device_tracker.lisa', 'home')) and (is_state('device_tracker.martijn', 'home')) %}
+          notify.telegram_martijn_en_lisa
+        {% elif is_state('device_tracker.martijn', 'home') %}
+          notify.telegram_martijn
+        {% elif is_state('device_tracker.lisa', 'home') %}
+          notify.telegram_lisa
+        {% endif %}
+      data:
+        message: 'De kattenbak moet verschoond worden'
+
+- id: clean_after_kitty_litter
+  alias: keuken stofzuigen na kattenbak schoonmaken
+  trigger:
+  - platform: state
+    entity_id: binary_sensor.kattenbak_contact
+    from: 'on'
+    to: 'off'
+    for:
+      seconds: 10
+  action:
+    - service: input_select.select_option
+      data:
+        entity_id: input_select.vacuum_room
+        option: 'Keuken'
+
+sensor:
+- platform: template
+  sensors:
+    kitty_litter:
+      icon_template: mdi:cat
+      value_template: >-
+        {% if (as_timestamp(now())-as_timestamp(states.binary_sensor.kattenbak_contact.last_changed )) | int > 144000 %}
+        vies
+        {% else %}
+        schoon
+        {% endif %}
+      friendly_name: 'Kattenbak legen'

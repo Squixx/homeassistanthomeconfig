@@ -1,0 +1,406 @@
+# stofzuiger barry botsbak
+vacuum:
+  - platform: xiaomi_miio
+    name: Barry Botsbak
+    host: !secret xiaomi_vacuum_host
+    token: !secret xiaomi_vacuum_token
+
+input_select:
+  vacuum_room:
+    name: Kies een kamer om te stofzuigen
+    options:
+      - Selecteer kamer
+      - Kast
+      - Slaapkamer
+      - Gang
+      - Woonkamer
+      - Keuken
+      - Kantoor
+      - Leeg stofbakje
+    initial: Selecteer kamer
+
+input_boolean:
+  daily_vacuum_first_run:
+    name: Daily Vacuum First Run
+    initial: off
+  disable_daily_vacuum:
+    name: Stop dagelijkse schoonmaak
+    icon: mdi:stop
+    initial: off
+  disable_dustbin_notification:
+    icon: mdi:notifications_off
+    name: Disable Dustbin Notification
+    initial: off
+  vacuum_base_position:
+    name: Basis station rechts boven
+    icon: mdi:rotate-left
+    initial: off
+
+#if bedroom is top bottom left
+script:
+  vacuum_slaapkamer_left:
+    alias: "Stofzuig Slaapkamer"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[25000, 23000, 29200, 26750, 1]]
+  vacuum_woonkamer_left:
+    alias: "Vacuum woonkamer"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[25000, 27000, 29100, 34000, 1]]
+  vacuum_kast_left:
+    alias: "Vacuum Kast"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[29300, 29880, 30600, 33200, 1]]
+  vacuum_gang_left:
+    alias: "Vacuum Gang"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[29300, 25500, 30800, 29800, 1]]
+  vacuum_keuken_left:
+    alias: "Vacuum Keuken"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[30900, 23500, 33500, 26750, 1]]
+  vacuum_kantoor_left:
+    alias: "Vacuum Kantoor"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[31100, 29000, 33500, 33200, 1]]
+  empty_dustbin_left:
+    alias: "Leeg stofbakje"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_goto_target
+          params: [31500, 25500]
+
+  ## if bedroom is top right.
+  vacuum_slaapkamer:
+    alias: "Stofzuig Slaapkamer"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[22100, 24500, 26500, 28000, 1]]
+  vacuum_woonkamer:
+    alias: "Vacuum woonkamer"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[22200, 17000, 26500, 24200, 1]]
+  vacuum_kast:
+    alias: "Vacuum Kast"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[20900, 18000, 21900, 21200, 1]]
+  vacuum_gang:
+    alias: "Vacuum Gang"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[20600, 21320, 21900, 25500, 1]]
+  vacuum_keuken:
+    alias: "Vacuum Keuken"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[18300, 24720, 20450, 27750, 2]]
+  vacuum_kantoor:
+    alias: "Vacuum Kantoor"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_zoned_clean
+          params: [[17500, 18000, 20300, 22320, 1]]
+  empty_dustbin:
+    alias: "Leeg stofbakje"
+    sequence:
+      - service: vacuum.send_command
+        data:
+          entity_id: vacuum.barry_botsbak
+          command: app_goto_target
+          params: [19600, 25500]
+  empty_correct_dustbin:
+    alias: do the right thing
+    sequence:
+      - service: script.turn_on
+        data_template:
+          entity_id: >
+            {% if is_state('input_boolean.vacuum_base_position', 'off') %}
+              script.empty_dustbin_left
+            {% elif is_state('input_boolean.vacuum_base_position', 'on') %}
+              script.empty_dustbin
+            {% else %}
+            {% endif %}
+### AUTOMATIONS ###
+
+automation:
+  # zet de stofzuiger aan als iedereen weg is
+  - id: stofzuigen
+    alias: Start Daily Vacuum
+    trigger:
+      - platform: state
+        entity_id: group.all_devices
+        to: "not_home"
+      - platform: time
+        at: "13:00:00"
+    condition:
+      - condition: state
+        entity_id: input_boolean.daily_vacuum_first_run
+        state: "off"
+      - condition: time
+        after: "07:00:00"
+        before: "22:00:00"
+      - condition: state
+        entity_id: group.all_devices
+        state: "not_home"
+      - condition: state
+        entity_id: input_boolean.disable_daily_vacuum
+        state: "off"
+    action:
+      - service: vacuum.start
+        entity_id: vacuum.barry_botsbak
+      - service: homeassistant.turn_on
+        entity_id: input_boolean.daily_vacuum_first_run
+
+  # reset schoongemaakt state
+  - id: reset_first_cleaning
+    alias: Reset Daily Vacuum First Run state at midnight
+    trigger:
+      - platform: time
+        at: "0:00:00"
+    action:
+      - service: homeassistant.turn_off
+        entity_id: input_boolean.daily_vacuum_first_run
+      - service: homeassistant.turn_off
+        entity_id: input_boolean.disable_dustbin_notification
+
+  - id: Zuig_specifieke_kamer
+    alias: Stofzuig kamer
+    hide_entity: True
+    trigger:
+      - platform: state
+        entity_id: input_select.vacuum_room
+        from: "Selecteer kamer"
+    action:
+      - service: script.turn_on
+        data_template:
+          entity_id: >
+            {% if (is_state("input_select.vacuum_room", "Kast")) and (is_state('input_boolean.vacuum_base_position', 'off')) %}
+              script.vacuum_kast_left
+            {% elif (is_state("input_select.vacuum_room", "Slaapkamer")) and (is_state('input_boolean.vacuum_base_position', 'off')) %}
+              script.vacuum_slaapkamer_left
+            {% elif (is_state("input_select.vacuum_room", "Gang")) and (is_state('input_boolean.vacuum_base_position', 'off')) %}
+              script.vacuum_gang_left
+            {% elif (is_state("input_select.vacuum_room", "Woonkamer")) and (is_state('input_boolean.vacuum_base_position', 'off')) %}
+              script.vacuum_woonkamer_left
+            {% elif (is_state("input_select.vacuum_room", "Keuken")) and (is_state('input_boolean.vacuum_base_position', 'off')) %}
+              script.vacuum_keuken_left
+            {% elif (is_state("input_select.vacuum_room", "Kantoor")) and (is_state('input_boolean.vacuum_base_position', 'off')) %}
+              script.vacuum_kantoor_left
+            {% elif (is_state("input_select.vacuum_room", "Leeg stofbakje")) and (is_state('input_boolean.vacuum_base_position', 'off')) %}
+              script.empty_dustbin_left
+            {% elif (is_state("input_select.vacuum_room", "Kast")) and (is_state('input_boolean.vacuum_base_position', 'on')) %}
+              script.vacuum_kast
+            {% elif (is_state("input_select.vacuum_room", "Slaapkamer")) and (is_state('input_boolean.vacuum_base_position', 'on')) %}
+              script.vacuum_slaapkamer
+            {% elif (is_state("input_select.vacuum_room", "Gang")) and (is_state('input_boolean.vacuum_base_position', 'on')) %}
+              script.vacuum_gang
+            {% elif (is_state("input_select.vacuum_room", "Woonkamer")) and (is_state('input_boolean.vacuum_base_position', 'on')) %}
+              script.vacuum_woonkamer
+            {% elif (is_state("input_select.vacuum_room", "Keuken")) and (is_state('input_boolean.vacuum_base_position', 'on')) %}
+              script.vacuum_keuken
+            {% elif (is_state("input_select.vacuum_room", "Kantoor")) and (is_state('input_boolean.vacuum_base_position', 'on')) %}
+              script.vacuum_kantoor
+            {% elif (is_state("input_select.vacuum_room", "Leeg stofbakje")) and (is_state('input_boolean.vacuum_base_position', 'on')) %}
+              script.empty_dustbin
+            {% else %}
+            {% endif %}
+      - service: input_select.select_option
+        entity_id: input_select.vacuum_room
+        data_template:
+          option: "Selecteer kamer"
+
+  - id: Send alert after daily vacuum to empty the dustbin
+    alias: Send alert after daily vacuum to empty the dustbin
+    trigger:
+      - platform: state
+        entity_id: group.all_devices
+        to: "home"
+        for:
+          minutes: 3
+      - platform: template
+        value_template: "{{ states.vacuum.barry_botsbak.attributes.status == 'Charging' }}"
+    condition:
+      - condition: state
+        entity_id: input_boolean.daily_vacuum_first_run
+        state: "on"
+      - condition: time
+        after: "08:30:00"
+        before: "22:30:00"
+      - condition: template
+        value_template: >
+          {% if states.automation.send_alert_after_daily_vacuum_to_empty_the_dustbin.last_triggered is not none %}
+            {% if as_timestamp(now()) | int   -  as_timestamp(states.automation.send_alert_after_daily_vacuum_to_empty_the_dustbin.attributes.last_triggered) | int > 1800 %} true {% else %} false
+            {% endif %}
+          {% else %}
+          false
+          {% endif %}
+      - condition: state
+        entity_id: input_boolean.disable_dustbin_notification
+        state: "off"
+      - condition: time
+        weekday:
+          - mon
+          - wed
+          - fri
+      - condition: template
+        value_template: "{{ states.vacuum.barry_botsbak.attributes.status == 'Charging' }}"
+      - condition: state
+        entity_id: group.all_devices
+        state: "home"
+    action:
+      - service_template: >
+          {% if (is_state('device_tracker.lisa', 'home')) and (is_state('device_tracker.martijn', 'home')) %}
+            notify.telegram_martijn_en_lisa
+          {% elif is_state('device_tracker.martijn', 'home') %}
+            notify.telegram_martijn
+          {% elif is_state('device_tracker.lisa', 'home') %}
+            notify.telegram_lisa
+          {% endif %}
+        data:
+          message: "Het stofzuiger bakje moet geleegd worden"
+      - delay:
+          minutes: "1"
+      - service: script.turn_on
+        entity_id: script.empty_correct_dustbin
+      - delay:
+          seconds: "40"
+      - service: vacuum.locate
+        entity_id: vacuum.barry_botsbak
+
+sensor:
+  - platform: template
+    sensors:
+      vacuum_status:
+        friendly_name: Status
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "Status: {{ states.vacuum.barry_botsbak.attributes.status }}"
+        icon_template: >
+          {% set val =  states.vacuum.barry_botsbak.attributes.status  %}
+          {% if val == 'Charging' %}
+            mdi:battery-charging
+          {% elif val == 'Cleaning' %}
+            mdi:move-resize
+          {% elif val == 'Returning home' %}
+            mdi:keyboard-return
+          {% elif val == 'Idle' %}
+            mdi:dots-horizontal
+          {% elif val == 'Paused' %}
+            mdi:pause-circle
+          {% else %}
+            mdi:help-circle
+          {% endif %}
+      vacuum_fan_speed:
+        friendly_name: Fan Speed
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "Mode: {{ states.vacuum.barry_botsbak.attributes.fan_speed }}"
+        icon_template: "mdi:speedometer"
+      vacuum_battery:
+        friendly_name: Vacuum Battery
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "Battery: {{ states.vacuum.barry_botsbak.attributes.battery_level }}"
+        unit_of_measurement: "%"
+        icon_template: "{{ states.vacuum.barry_botsbak.attributes.battery_icon }}"
+      vacuum_cleaning_time:
+        friendly_name: Time of Last Cycle
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "{{ states.vacuum.barry_botsbak.attributes.cleaning_time }}"
+        icon_template: "mdi:timer"
+      vacuum_cleaned_area:
+        friendly_name: Area of Last Cycle
+        unit_of_measurement: "m ²"
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "{{ states.vacuum.barry_botsbak.attributes.cleaned_area }}"
+        icon_template: "mdi:ruler"
+      vacuum_cleanmainbrush:
+        friendly_name: Replace main brush
+        unit_of_measurement: "h"
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "Main Brush: {{ states.vacuum.barry_botsbak.attributes.main_brush_left }}"
+        icon_template: "mdi:screwdriver"
+      vacuum_cleansidebrush:
+        friendly_name: Replace side brush
+        unit_of_measurement: "h"
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "Side brush: {{ states.vacuum.barry_botsbak.attributes.side_brush_left }}"
+        icon_template: "mdi:screwdriver"
+      vacuum_cleanfilter:
+        friendly_name: Replace filter
+        unit_of_measurement: "h"
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "Filter: {{ states.vacuum.barry_botsbak.attributes.filter_left }}"
+        icon_template: "mdi:screwdriver"
+      vacuum_sensordirtyleft:
+        friendly_name: Replace filter
+        unit_of_measurement: "h"
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "Sensor: {{ states.vacuum.barry_botsbak.attributes.sensor_dirty_left }}"
+        icon_template: "mdi:screwdriver"
+      vacuum_do_not_disturb:
+        friendly_name: Do Not Disturb
+        entity_id:
+          - vacuum.barry_botsbak
+        value_template: "{{ states.vacuum.barry_botsbak.attributes.do_not_disturb }}"
+        icon_template: >
+          {% set val =  states.vacuum.barry_botsbak.attributes.do_not_disturb  %}
+          {% if val == 'on' %}
+            mdi:do-not-disturb
+          {% else %}
+            mdi:do-not-disturb-off
+          {% endif %}
+      vacuum_operation:
+        value_template: "Operation"
+      vacuum_accessories:
+        value_template: "Maintenance"

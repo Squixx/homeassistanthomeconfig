@@ -1,0 +1,11 @@
+light:
+    - platform: xiaomi_miio
+      name: Rieten lamp
+      host: !secret xiaomi_philips_host
+      token: !secret xiaomi_philips_token
+      model: philips.light.bulb
+# - platform: xiaomi_miio
+#   name: Kerst Ster
+#   host: !secret xiaomi_candle_host
+#   token: !secret xiaomi_candle_token
+#   model: philips.light.candle2

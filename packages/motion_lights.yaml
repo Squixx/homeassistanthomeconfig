@@ -1,0 +1,315 @@
+input_boolean:
+  guest_mode:
+    name: Gasten
+    initial: off
+
+automation:
+  - id: keuken_occupancy_light
+    alias: Keukenlicht aan
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.keuken_motion_occupancy
+        from: "off"
+        to: "on"
+    condition:
+      - condition: state
+        entity_id: input_boolean.sleep_mode
+        state: "off"
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: group.all_devices
+            state: "home"
+          - condition: state
+            entity_id: input_boolean.guest_mode
+            state: "on"
+      - condition: or
+        conditions:
+          - condition: template
+            value_template: "{{states.sensor.dark_sky_cloud_coverage.state | int > 80}}"
+          - condition: template
+            value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+    action:
+      - service: light.turn_on
+        entity_id: light.keuken
+      - service: automation.turn_on
+        data:
+          entity_id: automation.keuken_motion_off
+
+  - id: keuken_motion_off
+    alias: Keukenlicht Uit
+    trigger:
+      platform: state
+      entity_id: binary_sensor.keuken_motion_occupancy
+      from: "on"
+      to: "off"
+      for:
+        minutes: 2
+    action:
+      - service: light.turn_off
+        entity_id: light.keuken
+      - service: automation.turn_off
+        data:
+          entity_id: automation.keuken_motion_off
+
+  - id: gang_occupancy_light
+    alias: Ganglicht aan.
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.gang_occupancy
+        from: "off"
+        to: "on"
+    condition:
+      - condition: state
+        entity_id: input_boolean.sleep_mode
+        state: "off"
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: group.all_devices
+            state: "home"
+          - condition: state
+            entity_id: input_boolean.guest_mode
+            state: "on"
+      - condition: or
+        conditions:
+          - condition: template
+            value_template: "{{states.sensor.dark_sky_cloud_coverage.state | int > 60}}"
+          - condition: template
+            value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+    action:
+      - service: light.turn_on
+        data:
+          entity_id: light.gang_light
+          brightness: 70
+      - service: automation.turn_on
+        data:
+          entity_id: automation.gang_motion_off
+
+  - id: gang_motion_off
+    alias: Ganglicht Uit.
+    trigger:
+      platform: state
+      entity_id: binary_sensor.gang_occupancy
+      from: "on"
+      to: "off"
+    action:
+      - service: light.turn_off
+        entity_id: light.gang_light
+      - service: automation.turn_off
+        data:
+          entity_id: automation.gang_motion_off
+
+  - id: WC_occupancy_light
+    alias: Wc licht aan
+    trigger:
+      platform: state
+      entity_id: binary_sensor.occupancy_wc
+      from: "off"
+      to: "on"
+    condition:
+      - condition: state
+        entity_id: input_boolean.sleep_mode
+        state: "off"
+    action:
+      - service: light.turn_on
+        entity_id: light.wc
+      - service: automation.turn_on
+        data:
+          entity_id: automation.wc_motion_off
+
+  - id: wc_motion_off
+    alias: Wc licht uit
+    trigger:
+      platform: state
+      entity_id: binary_sensor.occupancy_wc
+      from: "on"
+      to: "off"
+      for:
+        minutes: 2
+    action:
+      - service: light.turn_off
+        entity_id: light.wc
+      - service: automation.turn_off
+        data:
+          entity_id: automation.wc_motion_off
+
+  - id: kast_occupancy_light
+    alias: kast licht aan
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motion_kast_occupancy
+        from: "off"
+        to: "on"
+    condition:
+      - condition: state
+        entity_id: input_boolean.sleep_mode
+        state: "off"
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: group.all_devices
+            state: "home"
+          - condition: state
+            entity_id: input_boolean.guest_mode
+            state: "on"
+      - condition: or
+        conditions:
+          - condition: template
+            value_template: "{{states.sensor.dark_sky_cloud_coverage.state | int > 70}}"
+          - condition: template
+            value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+    action:
+      - service: light.turn_on
+        entity_id: light.kast
+      - service: automation.turn_on
+        data:
+          entity_id: automation.kast_motion_off
+
+  - id: kast_motion_off
+    alias: kast licht uit
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motion_kast_occupancy
+        from: "on"
+        to: "off"
+    action:
+      - service: light.turn_off
+        entity_id: light.kast
+      - service: automation.turn_off
+        data:
+          entity_id: automation.kast_motion_off
+
+  - id: badkamer_motion_on
+    alias: badkamer licht aan
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.badkamer_occupancy
+        from: "off"
+        to: "on"
+    condition:
+      # - condition: state
+      #   entity_id: input_boolean.sleep_mode
+      #   state: 'off'
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: group.all_devices
+            state: "home"
+          - condition: state
+            entity_id: input_boolean.guest_mode
+            state: "on"
+    action:
+      - service: light.turn_on
+        entity_id: light.badkamer
+      - service: automation.turn_on
+        data:
+          entity_id: automation.badkamer_motion_off
+
+  - id: badkamer_motion_off
+    alias: badkamer licht uit
+    trigger:
+      platform: state
+      entity_id: binary_sensor.badkamer_occupancy
+      from: "on"
+      to: "off"
+      for:
+        minutes: 2
+    action:
+      - service: light.turn_off
+        entity_id: light.badkamer
+      - service: automation.turn_off
+        data:
+          entity_id: automation.badkamer_motion_off
+
+  - id: hal_motion_on
+    alias: hal licht aan
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.hal_occupancy
+        from: "off"
+        to: "on"
+    condition:
+      - condition: or
+        conditions:
+          - condition: template
+            value_template: "{{states.sensor.dark_sky_cloud_coverage.state | int > 70}}"
+          - condition: template
+            value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+    action:
+      - service: light.turn_on
+        data:
+          entity_id: light.hal_light
+          brightness: 90
+      - service: automation.turn_on
+        data:
+          entity_id: automation.hal_motion_off
+
+  - id: hal_motion_off
+    alias: hal licht uit
+    trigger:
+      platform: state
+      entity_id: binary_sensor.hal_occupancy
+      from: "on"
+      to: "off"
+    action:
+      - service: light.turn_off
+        entity_id: light.hal_light
+      - service: automation.turn_off
+        data:
+          entity_id: automation.hal_motion_off
+
+  - id: kantoor_occupancy_light
+    alias: kantoor licht aan
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.kantoor_occupancy
+        from: "off"
+        to: "on"
+      - platform: template
+        value_template: "{{states.sensor.dark_sky_cloud_coverage.state | int > 80}}"
+      - platform: template
+        value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+    condition:
+      - condition: state
+        entity_id: binary_sensor.kantoor_occupancy
+        state: "on"
+      - condition: state
+        entity_id: input_boolean.sleep_mode
+        state: "off"
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: group.all_devices
+            state: "home"
+          - condition: state
+            entity_id: input_boolean.guest_mode
+            state: "on"
+      - condition: or
+        conditions:
+          - condition: template
+            value_template: "{{states.sensor.dark_sky_cloud_coverage.state | int > 80}}"
+          - condition: template
+            value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+    action:
+      - service: light.turn_on
+        entity_id: light.kantoor
+      - service: automation.turn_on
+        data:
+          entity_id: automation.kantoor_motion_off
+
+  - id: kantoor_motion_off
+    alias: kantoor licht uit
+    trigger:
+      platform: state
+      entity_id: binary_sensor.kantoor_occupancy
+      from: "on"
+      to: "off"
+      for:
+        minutes: 5
+    action:
+      - service: light.turn_off
+        entity_id: light.kantoor
+      - service: automation.turn_off
+        data:
+          entity_id: automation.kantoor_motion_off

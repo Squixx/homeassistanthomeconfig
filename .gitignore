@@ -1,0 +1,24 @@
+#spotify stuff
+spotify/
+# Example .gitignore file for your config dir.
+# A * ensures that everything will be ignored.
+
+www/mini-graph-card/
+# You can whitelist files/folders with !, these will not be ignored.
+!*.yaml
+!.gitignore
+!*.md
+!packages/
+!.prettierrc.json
+
+# Ignore folders.
+.storage
+.cloud
+.google.token
+
+# Ensure these YAML files are ignored, otherwise your secret data/credentials will leak.
+ip_bans.yaml
+secrets.yaml
+known_devices.yaml
+home-assistant.log
+google_calendars.yaml

@@ -1,0 +1,14 @@
+sensor.dark_sky_apparent_temperature:
+  friendly_name: Gevoelstemperatuur
+sensor.dark_sky_cloud_coverage:
+  friendly_name: Bewolking
+sensor.dark_sky_nearest_storm_distance:
+  friendly_name: dichtstbijzijnde storm
+sensor.dark_sky_precip_probability:
+  friendly_name: neerslagkans
+sensor.sonarr_upcoming:
+  friendly_name: Aankomende tvshows
+sensor.radarr_upcoming:
+  friendly_name: Aankomende films
+sensor.pakketjes:
+  icon: https://www.postnl.nl/Images/Beeldmerk-PostNL_tcm10-8609.png

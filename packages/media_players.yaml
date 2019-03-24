@@ -1,0 +1,101 @@
+media_player:
+  - platform: spotify
+    name: "Martijn's Spotify"
+    client_id: !secret spotify_m_client_id
+    client_secret: !secret spotify_m_client_secret
+    cache_path: '/config/spotify/.spotify_martijn'
+    aliases:
+      5da443b4cd74b564248b95865f2acdc9: 'Woonkamer'
+      a304f35be006f238cc04ea58688177cf90b73304: 'Redmi'
+      a33f112ef6e1d51621994f489dd11c4f642462da: 'Desktop'
+
+  - platform: kodi
+    host: !secret kodi_ip
+  
+  - platform: squeezebox
+##  Set your IP address for LMS server
+    host: !secret squeezebox_ip
+
+input_boolean:
+  watching_netflix:
+    name: kijk netflix op chromecast
+    icon: mdi:netflix
+    initial: off
+
+
+automation:
+# lichten uit bij tv kijken
+- id: tv_lights
+  alias: 'film kijken'
+  trigger:
+    - platform: state
+      entity_id: media_player.kodi
+      to: 'playing'
+      for:
+        seconds: 4
+  condition:
+    - condition: template
+      value_template: "{{ states.sensor.period_of_day.state == 'Nacht' }}"
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: "{{  states.media_player.kodi.attributes.media_content_type == 'movie' }}"
+      - condition: template
+        value_template: "{{  states.media_player.kodi.attributes.media_content_type == 'tvshow' }}"
+  action:
+    - service: scene.turn_on
+      entity_id: scene.movies
+
+- id: dim_lights_netflix
+  alias: 'Dim lights when playing Netflix in Living Room'
+  trigger:
+    platform: state
+    entity_id: media_player.woonkamer
+    to: 'playing'
+    for:
+      seconds: 4
+  condition:
+    - condition: template
+      value_template: "{{ states.sensor.period_of_day.state == 'Nacht' }}"
+    - condition: template
+      value_template: "{{  states.media_player.woonkamer.attributes.app_name == 'Netflix' }}"
+  action:
+    - service: scene.turn_on
+      entity_id: scene.movies
+    - service: homeassistant.turn_on
+      entity_id: input_boolean.watching_netflix
+
+#Lichten aan als je de serie/film uit zet
+- id: lights_on_after_netflix
+  alias: 'lichten aan na het netflixen'
+  trigger:
+    - platform: state
+      entity_id: media_player.woonkamer #if chromecast state changes
+  condition:
+    - condition: template
+      value_template: "{{ states('media_player.woonkamer') != 'playing' }}"
+    - condition: template
+      value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+    - condition: state
+      entity_id: input_boolean.watching_netflix
+      state: 'on'
+  action:
+    - service: scene.turn_on
+      entity_id: scene.avond
+    - service: homeassistant.turn_off
+      entity_id: input_boolean.watching_netflix
+
+
+- id: lights_on_after_movie
+  alias: 'lichten aan na het tv kijken'
+  trigger:
+    - platform: state
+      entity_id: media_player.kodi #if osmc state changes
+  condition:
+    - condition: template
+      value_template: "{{ states('media_player.kodi') != 'playing' }}"
+    - condition: template
+      value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+  action:
+    - service: scene.turn_on
+      entity_id: scene.avond

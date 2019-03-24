@@ -1,0 +1,33 @@
+automation:
+## terrarium lights
+- id: kerst_ster_uit
+  alias: 'kerst ster uit overdag'
+  hide_entity: true
+  trigger:
+    - platform: template
+      value_template: "{{ states.sensor.period_of_day.state == 'Dag' }}"
+  action:
+    - service: homeassistant.turn_off
+      entity_id: light.kerst_ster
+
+
+- id: kerst_ster_aan
+  alias: 'Kerst ster als het donker is'
+  hide_entity: true
+  trigger:
+    - platform: template
+      value_template: "{{ states.sensor.period_of_day.state == 'Schemer' }}"
+  action:
+    - service: homeassistant.turn_on
+      entity_id: light.kerst_ster
+
+# kerstboom aan
+- id: kerstboom
+  alias: 'kerstboom aan als iemand thuis komt'
+  trigger:
+  - platform: state
+    entity_id: group.all_devices
+    to: 'home'
+  action:
+    - service: homeassistant.turn_on
+      entity_id: light.kerstboom

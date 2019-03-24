@@ -1,0 +1,120 @@
+# Make sure the DB doesnt grow out of wack
+recorder:
+  # Delete events and states older than 2 weeks
+  db_url: !secret db_url
+  exclude:
+    domains:
+      - weblink
+      - updater
+      - input_boolean
+      - script
+      - automation
+    entities:
+      - sensor.last_boot
+      - sensor.date
+      - sensor.dark_sky_cloud_coverage
+      - sensor.dark_sky_dew_point
+      - sensor.dark_sky_humidity
+      - sensor.dark_sky_icon
+      - sensor.dark_sky_nearest_storm_distance
+      - sensor.dark_sky_ozone
+      - sensor.dark_sky_precip
+      - sensor.dark_sky_precip_intensity
+      - sensor.dark_sky_pressure
+      - sensor.dark_sky_summary
+      - sensor.dark_sky_temperature
+      - sensor.dark_sky_visibility
+      - sensor.dark_sky_wind_bearing
+      - sensor.lastfm_coredalae
+      - sensor.dayofyear
+      - sensor.moon
+      - sensor.nextsunrise
+      - sensor.nextsunset
+      - sensor.since_last_boot
+      - sensor.weekofyear
+      - sun.sun
+      - sensor.br_humidity
+      - sensor.br_pressure
+      - sensor.br_temperature
+      - sensor.br_wind_speed
+      - sensor.yr_symbol
+      - sensor.nzbget_artricle_cache
+      - sensor.nzbget_que_size
+      - sensor.nzbget_speed
+      - weather.utrecht
+      - sensor.sonarr_upcoming_media
+      - sensor.radarr_upcoming_media
+      - sensor.time
+      - sensor.date
+# Enables support for tracking state changes over time
+history:
+  exclude:
+    domains:
+      - automation
+      - weblink
+      - updater
+      - input_boolean
+      - input_select
+      - media_player
+      - script
+      - group
+      - notification
+      - discovery
+      - calendar
+      - configuration
+    entities:
+      - sensor.last_boot
+      - sensor.date
+      - sensor.dark_sky_cloud_coverage
+      - sensor.dark_sky_dew_point
+      - sensor.dark_sky_humidity
+      - sensor.dark_sky_icon
+      - sensor.dark_sky_nearest_storm_distance
+      - sensor.dark_sky_ozone
+      - sensor.dark_sky_precip
+      - sensor.dark_sky_precip_intensity
+      - sensor.dark_sky_pressure
+      - sensor.dark_sky_summary
+      - sensor.dark_sky_temperature
+      - sensor.dark_sky_visibility
+      - sensor.dark_sky_wind_bearing
+      - sensor.lastfm_coredalae
+      - sensor.dayofyear
+      - sensor.moon
+      - sensor.nextsunrise
+      - sensor.nextsunset
+      - sensor.since_last_boot
+      - sensor.weekofyear
+      - sun.sun
+      - sensor.br_humidity
+      - sensor.br_pressure
+      - sensor.br_temperature
+      - sensor.br_wind_speed
+      - sensor.yr_symbol
+      - weather.utrecht
+      - media_player.spotify
+      - timer.zigbee_permit_join
+      - sensor.nzbget_artricle_cache
+      - sensor.nzbget_que_size
+      - sensor.nzbget_speed
+      - sensor.sonarr_upcoming
+      - sensor.radarr_upcoming
+      - sensor.vacuum_do_not_disturb
+      - sensor.vacuum_operation
+      - sensor.vacuum_fan_speed
+      - sensor.vacuum_accessories
+      - sensor.vacuum_cleaning_time
+      - sensor.radarr_upcoming_media
+      - sensor.sonarr_upcoming_media
+      - sensor.custom_card_tracker
+      - sensor.custom_component_tracker
+      - sensor.custom_python_script_tracker
+      - switch.hoeklamp
+      - switch.lamptak
+      - switch.plantlamp
+      - switch.verlengsnoerswitch
+      - switch.verlengsnoerswitch_2
+      - sensor.time
+      - sensor.date
+      - sensor.datum
+      - sensor.pakketjes

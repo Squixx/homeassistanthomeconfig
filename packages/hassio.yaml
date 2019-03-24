@@ -1,0 +1,22 @@
+sensor:
+- platform: systemmonitor
+  resources:
+  - type: processor_use
+  - type: disk_use_percent
+    arg: "/"
+  # - type: since_last_boot
+  - type: last_boot
+  - type: memory_use_percent
+  - type: network_in
+    arg: eth0
+  - type: network_out
+    arg: eth0
+- platform: command_line
+  name: CPU Temp
+  command: "cat /sys/class/thermal/thermal_zone0/temp"
+  unit_of_measurement: "°C"
+  value_template: '{{ value | multiply(0.001) | round(2)  }}'
+
+- platform: uptime
+  name: Time Online
+  unit_of_measurement: hours

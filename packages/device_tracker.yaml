@@ -1,0 +1,8 @@
+device_tracker:
+  - platform: experiaboxv10
+    host: !secret experiabox_host
+    username: !secret experiabox_username
+    password: !secret experiabox_ password
+    new_device_defaults:
+      track_new_devices: False
+      hide_if_away: False

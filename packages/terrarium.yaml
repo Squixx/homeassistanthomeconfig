@@ -1,0 +1,21 @@
+automation:
+## terrarium lights
+- id: terrariumlight_on
+  alias: 'terrarium licht aan overdag'
+  hide_entity: true
+  trigger:
+    - platform: template
+      value_template: "{{ states.sensor.period_of_day.state != 'Nacht' }}"
+  action:
+    service: switch.turn_on
+    entity_id: switch.terrarium
+
+- id: terrariumlight_off
+  alias: 'Terrarium uit'
+  hide_entity: true
+  trigger:
+    - platform: template
+      value_template: "{{ states.sensor.period_of_day.state == 'Nacht' }}"
+  action:
+    service: switch.turn_off
+    entity_id: switch.terrarium

@@ -1,0 +1,252 @@
+homeassistant:
+    customize:
+        sensor.washing_machine_status:
+            icon: mdi:washing-machine
+        binary_sensor.wasmachine_contact:
+            device_class: opening
+
+# input_number:
+#     washer_slider:
+#         name: Wasmachine
+#         initial: 60
+#         min: 0
+#         max: 240
+#         step: 1
+
+# timer:
+#     washer:
+#         name: Wasmachine
+#         icon: mdi:washing-machine
+
+input_boolean:
+    # washer:
+    #     name: Wasmachine
+    #     icon: mdi:washing-machine
+    #     initial: off
+
+    washing_machine_notification:
+        name: Wasmachine melding
+        initial: on
+        icon: mdi:washing-machine
+
+input_select:
+    washing_machine_status:
+        name: Washing Machine Status
+        options:
+            - Leeg
+            - Draait
+            - Afronden
+            - Schoon
+        initial: Leeg
+
+sensor:
+    - platform: template
+      sensors:
+          # Washing Machine Status
+          washing_machine_status:
+              entity_id:
+                  - input_select.washing_machine_status
+              value_template: '{{ states.input_select.washing_machine_status.state}}'
+              friendly_name: 'Washing Machine Status'
+
+automation:
+    ############################################################
+    #
+    # Washing Machine Control
+    #
+    ############################################################
+
+    # When power is detected, and the washing machine is not in
+    # the Draait state, change the status of the washing machine
+    # to Draait.
+    # The status check will ensure we don't try to put the state
+    # to Draait each time the power level changes, and we're already
+    # in the Draait state.
+
+    - alias: Set washing machine active when power detected
+      trigger:
+          - platform: numeric_state
+            entity_id: sensor.blitzwolf_power
+            above: 10
+            # for:
+            #   minutes: 6
+      condition:
+          condition: or
+          conditions:
+              - condition: state
+                entity_id: sensor.washing_machine_status
+                state: Leeg
+              - condition: state
+                entity_id: sensor.washing_machine_status
+                state: Schoon
+              - condition: state
+                entity_id: sensor.washing_machine_status
+                state: Afronden
+      action:
+          - service: input_select.select_option
+            data:
+                entity_id: input_select.washing_machine_status
+                option: Draait
+
+    # When the power drops, move the state of the washing machine to
+    # Afronden.
+
+    - alias: Set washing machine finished when power drops
+      trigger:
+          - platform: numeric_state
+            entity_id: sensor.blitzwolf_power
+            below: 6
+            for:
+              minutes: 1
+      condition:
+          condition: and
+          conditions:
+            - condition: state
+              entity_id: input_select.washing_machine_status
+              state: Draait
+            - condition: state
+              entity_id: binary_sensor.wasmachine_contact
+              state: 'off'
+      action:
+          - service: input_select.select_option
+            data:
+                entity_id: input_select.washing_machine_status
+                option: Afronden
+
+    # Wait 1 minutes for us to be in the Afronden state before we
+    # decide the washing machine has finished. This way, if the
+    # washing machine is in between cycles and the power drops, we
+    # won't mark the washing machine cycle as finished too early.
+
+    - alias: Set washing machine Schoon after timeout
+      trigger:
+          - platform: state
+            entity_id: input_select.washing_machine_status
+            to: Afronden
+            for:
+              minutes: 1
+      condition:
+          condition: and
+          conditions:
+              - condition: state
+                entity_id: input_select.washing_machine_status
+                state: Afronden
+              - condition: state
+                entity_id: binary_sensor.wasmachine_contact
+                state: 'off'
+      action:
+          - service: input_select.select_option
+            data:
+                entity_id: input_select.washing_machine_status
+                option: Schoon
+
+    # When we open the washing machine door, reset the status back to
+    # Leeg, so we don't spam people that the washing machine has
+    # finished, and someone has already emptied it
+
+    - alias: Set washing machine dirty when door opens
+      trigger:
+          - platform: state
+            entity_id: binary_sensor.wasmachine_contact
+            to: 'on'
+      condition:
+          condition: or
+          conditions:
+              - condition: state
+                entity_id: input_select.washing_machine_status
+                state: Schoon
+              - condition: state
+                entity_id: input_select.washing_machine_status
+                state: Afronden
+      action:
+          - service: input_select.select_option
+            data:
+                entity_id: input_select.washing_machine_status
+                option: Leeg
+
+    - alias: prevent incorrect washer status
+      trigger:
+          - platform: time_pattern
+            minutes: '/5'
+      condition:
+          - condition: or
+            conditions:
+                # - condition: state
+                #   entity_id: input_select.washing_machine_status
+                #   state: Schoon
+                # - condition: state
+                #   entity_id: input_select.washing_machine_status
+                #   state: Afronden
+                - condition: state
+                  entity_id: input_select.washing_machine_status
+                  state: Draait
+          - condition: state
+            entity_id: binary_sensor.wasmachine_contact
+            state: 'on'
+      action:
+          - service: input_select.select_option
+            data:
+                entity_id: input_select.washing_machine_status
+                option: Leeg
+
+
+    - id: washer_alert
+      alias: alert als de was klaar is
+      trigger:
+          - platform: state
+            entity_id: sensor.washing_machine_status
+            to: 'Schoon'
+            for:
+                minutes: 1
+          - platform: state
+            entity_id: group.all_devices
+            to: 'home'
+            for:
+              minutes: 3
+          - platform: time_pattern
+            minutes: '/30'
+          - platform: state
+            entity_id: input_boolean.sleep_mode
+            to: 'off'
+      condition:
+          - condition: state
+            entity_id: binary_sensor.wasmachine_contact
+            state: 'off'
+          - condition: state
+            entity_id: input_boolean.sleep_mode
+            state: 'off'
+          - condition: state
+            entity_id: group.all_devices
+            state: 'home'
+          - condition: state
+            entity_id: input_select.washing_machine_status
+            state: 'Schoon'
+          - condition: state
+            entity_id: input_boolean.washing_machine_notification
+            state: 'on'
+          # - condition: template
+          #   value_template: >
+          #       {% if states.automation.automation.alert_als_de_was_klaar_is.last_triggered is not none %}
+          #         {% if as_timestamp(now()) | int   -  as_timestamp(states.automation.alert_als_de_was_klaar_is.attributes.last_triggered) | int > 1800 %} true {% else %} false
+          #         {% endif %}
+          #       {% else %}
+          #       true
+          #       {% endif %}
+      action:
+          - service_template: >
+                {% if (is_state('device_tracker.lisa', 'home')) and (is_state('device_tracker.martijn', 'home')) %}
+                  notify.telegram_martijn_en_lisa
+                {% elif is_state('device_tracker.martijn', 'home') %}
+                  notify.telegram_martijn
+                {% elif is_state('device_tracker.lisa', 'home') %}
+                  notify.telegram_lisa
+                {% endif %}
+            data_template:
+                message: >
+                  {% if (is_state('device_tracker.lisa', 'home')) and (is_state('device_tracker.martijn', 'home')) %}
+                    'De Wasmachine is klaar. Graag de was ophangen'
+                  {% elif is_state('device_tracker.martijn', 'home') %}
+                    'Martijn, de Wasmachine is klaar. Graag de was ophangen'
+                  {% elif is_state('device_tracker.lisa', 'home') %}
+                    'Lisa, de Wasmachine is klaar. Graag de was ophangen'
+                  {% endif %}

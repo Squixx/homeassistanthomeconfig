@@ -1,0 +1,37 @@
+timer:
+  alarm_countdown:
+    name: Time remaining
+    duration: 60
+
+automation:
+  - id: alarm_countdown
+    alias: start alarm countdown
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.hal_occupancy
+        from: "off"
+        to: "on"
+    action:
+      - service: timer.start
+        data:
+          entity_id: timer.alarm_countdown
+
+  - id: alarm
+    alias: gang alarm
+    hide_entity: true
+    trigger:
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.alarm_countdown
+    condition:
+      - condition: state
+        entity_id: group.all_devices
+        state: "not_home"
+      - condition: state
+        entity_id: input_boolean.guest_mode
+        state: "off"
+    action:
+      - service: notify.telegram_martijn_en_lisa
+        data:
+          message: "Er is beweging in de hal gedetecteerd, maar er is niemand thuis!!!"

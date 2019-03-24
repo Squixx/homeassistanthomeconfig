@@ -1,0 +1,69 @@
+scene:
+  - name: Movies
+    entities:
+        light.hoek:
+          state: false
+        light.plant:
+          state: false
+        light.rieten_lamp:
+          state: false
+        light.tak:
+          state: true
+        light.eettafel:
+          state: false
+  - name: Avond
+    entities:
+        light.hoek:
+          state: true
+        light.plant:
+          state: true
+        light.tak:
+          state: true
+        light.rieten_lamp:
+          state: true
+          brightness: 41
+          color_temp: 333
+          transition: 3
+        light.eettafel:
+          state: false
+  - name: bewolkt
+    entities:
+        light.hoek:
+          state: true
+        light.plant:
+          state: true
+        light.tak:
+          state: true
+        light.rieten_lamp:
+          state: true
+          brightness: 41
+          color_temp: 333
+          transition: 3
+  - name: zonnig
+    entities:
+        light.hoek:
+          state: false
+        light.plant:
+          state: false
+        light.rieten_lamp:
+          state: false
+        light.tak:
+          state: true
+  - name: Eten
+    entities:
+        light.hoek:
+          state: off
+        light.plant:
+          state: true
+        light.tak:
+          state: true
+        light.rieten_lamp:
+          state: true
+          brightness: 10
+          color_temp: 333
+          transition: 3
+        light.eettafel:
+          state: true
+  - name: Away
+    entities:
+      light.controlled_lights: false

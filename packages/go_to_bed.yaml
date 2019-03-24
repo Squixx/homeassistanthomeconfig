@@ -1,0 +1,119 @@
+script:
+  go_to_bed:
+    alias: "Ga Slapen"
+    sequence:
+    - service: homeassistant.turn_off
+      entity_id: light.controlled_lights
+    - service: homeassistant.turn_on
+      entity_id: input_boolean.sleep_mode
+    - service: homeassistant.turn_off
+      entity_id: light.kaptafel
+    - service: homeassistant.turn_off
+      entity_id: switch.desktop
+
+## turn of sleepmode when manually turning on any light
+automation:
+- id: sleep_mode_off
+  alias: opstaan
+  trigger:
+  - platform: state
+    entity_id: light.controlled_lights
+    to: 'on'
+  condition:
+  - condition: state
+    entity_id: input_boolean.sleep_mode
+    state: 'on'
+  action:
+  - service: homeassistant.turn_off
+    entity_id: input_boolean.sleep_mode
+  - service: homeassistant.turn_on
+    entity_id: light.kaptafel
+
+##thebutton
+- id: sleep_button
+  alias: bed doubletap
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/slaapkamer'
+  condition:
+    condition: template
+    value_template: '{{ "double" == trigger.payload_json.click }}'
+  action:
+    service: script.turn_on
+    entity_id: script.go_to_bed
+
+# woonkamer lichten
+- id: welcome_home_sleeping
+  alias: 'later thuis'
+  trigger:
+  - platform: state
+    entity_id: device_tracker.martijn
+    to: 'home'
+  - platform: state
+    entity_id: device_tracker.lisa
+    to: 'home'
+  condition:
+  - condition: state
+    entity_id: group.all_devices
+    state: 'home'
+  - condition: template
+    value_template: "{{ states.sensor.period_of_day.state != 'Dag' }}"
+  - condition: state
+    entity_id: input_boolean.sleep_mode
+    state: 'on'
+  action:
+    - service: scene.turn_on
+      entity_id: scene.avond
+    - service: homeassistant.turn_off
+      entity_id: input_boolean.sleep_mode
+
+- id: vroege_dienst
+  alias: 'lisa vroege dienst'
+  trigger:
+  - platform: state
+    entity_id: device_tracker.lisa
+    to: 'not_home'
+  condition:
+  - condition: state
+    entity_id: device_tracker.martijn
+    state: 'home'
+  - condition: time
+    after: '06:30:00'
+    before: '07:30:00'
+  action:
+    service: script.turn_on
+    entity_id: script.go_to_bed
+
+- id: werken_weekdag
+  alias: 'martijn naar kantoor'
+  trigger:
+  - platform: state
+    entity_id: device_tracker.martijn
+    to: 'not_home'
+  condition:
+  - condition: state
+    entity_id: device_tracker.lisa
+    state: 'home'
+  - condition: time
+    after: '08:15:00'
+    before: '09:15:00'
+  - condition: state
+    entity_id: light.slaapkamer
+    state: 'off'
+  - condition: state
+    entity_id:  binary_sensor.badkamer_occupancy
+    state: 'off'
+  - condition: state
+    entity_id: binary_sensor.gang_occupancy
+    state: 'off'
+  - condition: state
+    entity_id: binary_sensor.occupancy_wc
+    state: 'off'
+  action:
+    service: script.turn_on
+    entity_id: script.go_to_bed
+
+input_boolean:
+  sleep_mode:
+    name: Slapen
+    initial: off
